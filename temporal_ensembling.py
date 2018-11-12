@@ -5,7 +5,9 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 from utils import calc_metrics, prepare_mnist, weight_schedule
+import pdb
 
+##TODO: replace weight-norm to the regular BN
 
 def sample_train(train_dataset, test_dataset, batch_size, k, n_classes,
                  seed, shuffle_train=True, return_idxs=True):
