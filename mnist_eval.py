@@ -4,7 +4,7 @@ from torch.nn.utils import weight_norm
 import config
 from temporal_ensembling import train
 from utils import GaussianNoise, savetime, save_exp
-
+import pdb
 
 class CNN(nn.Module):
     
@@ -44,6 +44,7 @@ idxs         = []
 ts = savetime()
 cfg = vars(config)
 
+pdb.set_trace()
 for i in xrange(cfg['n_exp']):
     model = CNN(cfg['batch_size'], cfg['std'])
     seed = cfg['seeds'][i]

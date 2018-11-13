@@ -14,6 +14,7 @@ def sample_train(train_dataset, test_dataset, batch_size, k, n_classes,
     
     n = len(train_dataset)
     rrng = np.random.RandomState(seed)
+    #pdb.set_trace()
     
     cpt = 0
     indices = torch.zeros(k)
@@ -21,7 +22,7 @@ def sample_train(train_dataset, test_dataset, batch_size, k, n_classes,
     card = k // n_classes
     
     for i in xrange(n_classes):
-        class_items = (train_dataset.train_labels == i).nonzero()
+        class_items = (train_dataset.train_labels == i).nonzero().squeeze()
         n_class = len(class_items)
         rd = np.random.permutation(np.arange(n_class))
         indices[i * card: (i + 1) * card] = class_items[rd[:card]]
@@ -75,7 +76,8 @@ def train(model, seed, k=100, alpha=0.6, lr=0.002, beta2=0.99, num_epochs=150,
           early_stop=None, c=300, n_classes=10, max_epochs=80,
           max_val=30., ramp_up_mult=-5., n_samples=60000,
           print_res=True, **kwargs):
-    
+
+    pdb.set_trace()
     # retrieve data
     train_dataset, test_dataset = prepare_mnist()
     ntrain = len(train_dataset)
