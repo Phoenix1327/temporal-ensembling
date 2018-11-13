@@ -3,3 +3,5 @@ venv*
 *.pyc
 *.py~
 *.tar
+*.swp
+*.fuse_hidden*
