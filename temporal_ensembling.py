@@ -4,47 +4,10 @@ import torch
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import calc_metrics, prepare_mnist, weight_schedule
+from datasets import prepare_mnist, sample_train
+from utils import calc_metrics, weight_schedule
 import pdb
-
-##TODO: replace weight-norm to the regular BN
-
-def sample_train(train_dataset, test_dataset, batch_size, k, n_classes,
-                 seed, shuffle_train=True, return_idxs=True):
-    
-    n = len(train_dataset)
-    rrng = np.random.RandomState(seed)
-    #pdb.set_trace()
-    
-    cpt = 0
-    indices = torch.zeros(k)
-    other = torch.zeros(n - k)
-    card = k // n_classes
-    
-    for i in xrange(n_classes):
-        class_items = (train_dataset.train_labels == i).nonzero().squeeze()
-        n_class = len(class_items)
-        rd = np.random.permutation(np.arange(n_class))
-        indices[i * card: (i + 1) * card] = class_items[rd[:card]]
-        other[cpt: cpt + n_class - card] = class_items[rd[card:]]
-        cpt += n_class - card
-
-    other = other.long()
-    train_dataset.train_labels[other] = -1
-
-    train_loader = torch.utils.data.DataLoader(dataset=train_dataset, 
-                                               batch_size=batch_size,
-                                               num_workers=4,
-                                               shuffle=shuffle_train)
-    test_loader = torch.utils.data.DataLoader(dataset=test_dataset, 
-                                              batch_size=batch_size,
-                                              num_workers=4,
-                                              shuffle=False)
-    
-    if return_idxs:
-        return train_loader, test_loader, indices 
-    return train_loader, test_loader
-
+from tensorboardX import SummaryWriter
 
 def temporal_loss(out1, out2, w, labels):
     
@@ -77,10 +40,13 @@ def train(model, seed, k=100, alpha=0.6, lr=0.002, beta2=0.99, num_epochs=150,
           max_val=30., ramp_up_mult=-5., n_samples=60000,
           print_res=True, **kwargs):
 
-    pdb.set_trace()
+    #pdb.set_trace()
+
+    writer = SummaryWriter(comment='Semi-supervised')
     # retrieve data
     train_dataset, test_dataset = prepare_mnist()
     ntrain = len(train_dataset)
+
 
     # build model
     model.cuda()
@@ -118,6 +84,7 @@ def train(model, seed, k=100, alpha=0.6, lr=0.002, beta2=0.99, num_epochs=150,
         l = []
         supl = []
         unsupl = []
+        #pdb.set_trace()
         for i, (images, labels) in enumerate(train_loader):  
             images = Variable(images.cuda())
             labels = Variable(labels.cuda(), requires_grad=False)
@@ -139,7 +106,7 @@ def train(model, seed, k=100, alpha=0.6, lr=0.002, beta2=0.99, num_epochs=150,
             optimizer.step()
 
             # print loss
-            if (epoch + 1) % 10 == 0:
+            if (epoch + 1) % 1 == 0:
                 if i + 1 == 2 * c:
                     print ('Epoch [%d/%d], Step [%d/%d], Loss: %.6f, Time (this epoch): %.2f s' 
                            %(epoch + 1, num_epochs, i + 1, len(train_dataset) // batch_size, np.mean(l), timer() - t))
@@ -156,12 +123,18 @@ def train(model, seed, k=100, alpha=0.6, lr=0.002, beta2=0.99, num_epochs=150,
         losses.append(eloss)
         sup_losses.append((1. / k) * np.sum(supl))  # division by 1/k to obtain the mean supervised loss
         unsup_losses.append(np.mean(unsupl))
+
+        writer.add_scalar('Train_loss', losses[epoch], epoch)
+        writer.add_scalar('Supervised_loss', sup_losses[epoch], epoch)
+        writer.add_scalar('Unsupervised_loss', unsup_losses[epoch], epoch)
         
         # saving model 
         if eloss < best_loss:
             best_loss = eloss
             torch.save({'state_dict': model.state_dict()}, 'model_best.pth.tar')
 
+    writer.add_graph(model, (images,))
+    writer.close()
     # test
     model.eval()
     acc = calc_metrics(model, test_loader)

@@ -10,41 +10,7 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.transforms as tf
-
-
-class GaussianNoise(nn.Module):
-    
-    def __init__(self, batch_size, input_shape=(1, 28, 28), std=0.05):
-        super(GaussianNoise, self).__init__()
-        self.shape = (batch_size,) + input_shape
-        self.noise = Variable(torch.zeros(self.shape).cuda())
-        self.std = std
-        
-    def forward(self, x):
-        self.noise.data.normal_(0, std=self.std)
-        return x + self.noise
-
-
-def prepare_mnist():
-    # normalize data
-    m = (0.1307,)
-    st = (0.3081,)
-    normalize = tf.Normalize(m, st)
-        
-    # load train data
-    train_dataset = datasets.MNIST(
-                        root='../data', 
-                        train=True, 
-                        transform=tf.Compose([tf.ToTensor(), normalize]),  
-                        download=True)
-    
-    # load test data
-    test_dataset = datasets.MNIST(
-                        root='../data', 
-                        train=False, 
-                        transform=tf.Compose([tf.ToTensor(), normalize]))
-    
-    return train_dataset, test_dataset
+from datasets import prepare_mnist
 
 
 def ramp_up(epoch, max_epochs, max_val, mult):

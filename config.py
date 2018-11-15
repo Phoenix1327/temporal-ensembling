@@ -1,7 +1,7 @@
 import numpy as np
 
 # global vars
-n_exp        = 5
+n_exp        = 1
 k            = 100
 # model vars
 drop         = 0.5
